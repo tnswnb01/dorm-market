@@ -1,0 +1,13 @@
+# --- ใช้รัน API service (ทดสอบได้ในสภาพแวดล้อมนี้ด้วย MockEmbedder) ---
+fastapi
+uvicorn[standard]
+pillow
+numpy
+python-multipart
+pydantic
+
+# --- ใช้เทรน/รัน CLIP จริง (ต้องรันที่เครื่องคุณเอง มี internet ปกติ) ---
+torch
+open_clip_torch
+scikit-learn   # ใช้ตอน evaluate (t-SNE visualization, train/val split)
+tqdm           # progress bar ตอนเทรน

@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-body antialiased;
+  }
+  a {
+    @apply text-inherit no-underline;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  /* focus ring สม่ำเสมอทั้งเว็บ แทน :focus-visible ทั่วไป */
+  .focus-ring {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange focus-visible:outline-offset-2;
+  }
+}

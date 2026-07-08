@@ -1,0 +1,88 @@
+package handler
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+
+	"dormmarket/internal/auth"
+	"dormmarket/internal/models"
+	"dormmarket/internal/repository"
+	"dormmarket/internal/service"
+)
+
+type ReviewHandler struct {
+	reviews *service.ReviewService
+}
+
+func NewReviewHandler(reviewService *service.ReviewService) *ReviewHandler {
+	return &ReviewHandler{reviews: reviewService}
+}
+
+type createReviewRequest struct {
+	ListingID string `json:"listingId"`
+	Rating    int    `json:"rating"`
+	Comment   string `json:"comment"`
+}
+
+func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, errors.New("ต้องเข้าสู่ระบบก่อน"))
+		return
+	}
+
+	var req createReviewRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, errors.New("รูปแบบข้อมูลไม่ถูกต้อง"))
+		return
+	}
+
+	review, err := h.reviews.Create(r.Context(), service.CreateReviewInput{
+		ListingID:  req.ListingID,
+		ReviewerID: userID,
+		Rating:     req.Rating,
+		Comment:    req.Comment,
+	})
+	switch {
+	case errors.Is(err, repository.ErrNotFound):
+		writeError(w, http.StatusNotFound, errors.New("ไม่พบประกาศนี้"))
+	case errors.Is(err, service.ErrInvalidRating),
+		errors.Is(err, service.ErrListingNotSold),
+		errors.Is(err, service.ErrCannotReviewSelf),
+		errors.Is(err, service.ErrNotEligibleReview),
+		errors.Is(err, service.ErrAlreadyReviewed):
+		writeError(w, http.StatusBadRequest, err)
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, errors.New("บันทึกรีวิวไม่สำเร็จ"))
+	default:
+		writeJSON(w, http.StatusCreated, review)
+	}
+}
+
+// ListForUser — GET /api/users/{id}/reviews (public — ใครก็ดูรีวิวของผู้ขายคนไหนก็ได้)
+func (h *ReviewHandler) ListForUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.PathValue("id")
+	reviews, err := h.reviews.ListForUser(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if reviews == nil {
+		reviews = []models.Review{}
+	}
+	writeJSON(w, http.StatusOK, reviews)
+}
+
+// CanReview — GET /api/listings/{id}/can-review (ต้อง login) ใช้โชว์/ซ่อนปุ่ม "เขียนรีวิว" ฝั่ง frontend
+func (h *ReviewHandler) CanReview(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, errors.New("ต้องเข้าสู่ระบบก่อน"))
+		return
+	}
+	listingID := r.PathValue("id")
+	writeJSON(w, http.StatusOK, map[string]bool{
+		"canReview": h.reviews.CanReview(r.Context(), listingID, userID),
+	})
+}

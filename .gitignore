@@ -1,0 +1,29 @@
+# --- Secrets / local env ---
+.env
+.env.local
+*.env
+!*.env.example
+
+# --- Node / frontend ---
+node_modules/
+dist/
+frontend/dist/
+
+# --- Go / backend ---
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+
+# --- Python / ml-service ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+ml-service/data/raw/
+ml-service/data/*.npz
+ml-service/archive/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,53 @@
+:root {
+  /* Palette — "kraft market & price tag" */
+  --bg: #f6f4ee;
+  --surface: #ffffff;
+  --ink: #22252a;
+  --ink-soft: rgba(34, 37, 42, 0.62);
+  --ink-faint: rgba(34, 37, 42, 0.4);
+  --line: rgba(34, 37, 42, 0.12);
+
+  --orange: #e2622a; /* ปุ่มหลัก, ราคา */
+  --orange-dark: #c94f1c;
+  --green: #3d8361; /* trust / สถานะ available */
+  --amber: #d69a1f; /* สถานะ reserved */
+  --red: #c84a3c; /* error / sold */
+
+  --font-display: 'Kanit', 'Noto Sans Thai', sans-serif;
+  --font-body: 'Sarabun', 'Noto Sans Thai', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow: 0 10px 28px rgba(34, 37, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}

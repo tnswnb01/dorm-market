@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16  # postgres:16 + pgvector extension ติดตั้งมาให้แล้ว
+    container_name: dormmarket-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dormmarket
+      POSTGRES_PASSWORD: dormmarket
+      POSTGRES_DB: dormmarket
+    ports:
+      - "5432:5432"
+    volumes:
+      - dormmarket-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dormmarket"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  dormmarket-postgres-data:
+
+# หมายเหตุ: Phase 2 จะเพิ่ม service สำหรับ Redis (cache/pub-sub) และ
+# MinIO (เก็บรูปแบบ S3-compatible) เข้ามาในไฟล์นี้เพิ่มเติม

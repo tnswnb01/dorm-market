@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS listing_images;
+DROP TABLE IF EXISTS listings;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS users;

@@ -1,0 +1,83 @@
+package main
+
+import (
+	"log"
+	"net/http"
+	"os"
+
+	"dormmarket/internal/auth"
+	"dormmarket/internal/config"
+	"dormmarket/internal/database"
+	"dormmarket/internal/handler"
+	"dormmarket/internal/mlservice"
+	"dormmarket/internal/repository"
+	"dormmarket/internal/router"
+	"dormmarket/internal/service"
+	"dormmarket/internal/ws"
+)
+
+func main() {
+	cfg := config.Load()
+
+	if err := os.MkdirAll(cfg.UploadsDir, 0755); err != nil {
+		log.Fatalf("สร้างโฟลเดอร์ uploads ไม่สำเร็จ: %v", err)
+	}
+
+	db, err := database.Connect(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("เชื่อมต่อฐานข้อมูลไม่สำเร็จ: %v\n(รัน `docker compose up -d` ที่ root โปรเจกต์ก่อน หรือเช็ค DATABASE_URL)", err)
+	}
+	defer db.Close()
+
+	// --- Repositories ---
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	listingRepo := repository.NewListingRepository(db)
+	chatRepo := repository.NewChatRepository(db)
+	reviewRepo := repository.NewReviewRepository(db)
+	shipmentRepo := repository.NewShipmentRepository(db)
+
+	// --- Services ---
+	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
+	if cfg.GoogleClientID != "" {
+		authService.WithGoogleVerifier(auth.NewGoogleVerifier(cfg.GoogleClientID))
+		log.Println("✅ เปิดใช้งาน Google Login แล้ว")
+	} else {
+		log.Println("ℹ️  ยังไม่ได้ตั้งค่า GOOGLE_CLIENT_ID — Google Login จะปิดอยู่ (ใช้อีเมล/รหัสผ่านได้ตามปกติ)")
+	}
+	listingService := service.NewListingService(listingRepo, categoryRepo)
+	if cfg.MLServiceURL != "" {
+		listingService.WithEmbedder(mlservice.NewHTTPClient(cfg.MLServiceURL))
+		log.Println("✅ เปิดใช้งาน image similarity search แล้ว (ml-service:", cfg.MLServiceURL, ")")
+	} else {
+		log.Println("ℹ️  ยังไม่ได้ตั้งค่า ML_SERVICE_URL — ค้นหาด้วยรูปจะปิดอยู่ (ลงประกาศ/ค้นหาปกติใช้ได้)")
+	}
+	chatService := service.NewChatService(chatRepo, listingRepo)
+	reviewService := service.NewReviewService(reviewRepo, listingRepo, chatRepo, userRepo)
+	shipmentService := service.NewShipmentService(shipmentRepo, chatRepo)
+
+	// --- Handlers ---
+	authHandler := handler.NewAuthHandler(authService)
+	listingHandler := handler.NewListingHandler(listingService, cfg.UploadsDir)
+	categoryHandler := handler.NewCategoryHandler(listingService)
+	hub := ws.NewHub()
+	chatHandler := handler.NewChatHandler(chatService, hub, cfg.JWTSecret)
+	reviewHandler := handler.NewReviewHandler(reviewService)
+	shipmentHandler := handler.NewShipmentHandler(shipmentService)
+
+	// --- Router ---
+	mux := router.New(router.Handlers{
+		Auth:        authHandler,
+		Listing:     listingHandler,
+		Category:    categoryHandler,
+		Chat:        chatHandler,
+		Review:      reviewHandler,
+		Shipment:    shipmentHandler,
+		JWTSecret:   cfg.JWTSecret,
+		UploadsDir:  cfg.UploadsDir,
+		AllowOrigin: cfg.AllowedOrigin,
+	})
+
+	log.Printf("🏠 DormMarket API กำลังทำงานที่ http://localhost:%s", cfg.Port)
+	log.Fatal(http.ListenAndServe(":"+cfg.Port, mux))
+}
