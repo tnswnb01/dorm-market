@@ -1,0 +1,1073 @@
+basePath: /
+definitions:
+  handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handler.authResponse:
+    properties:
+      token:
+        type: string
+      user: {}
+    type: object
+  handler.createListingRequest:
+    properties:
+      categoryId:
+        type: string
+      condition:
+        type: string
+      description:
+        type: string
+      price:
+        type: integer
+      title:
+        type: string
+    type: object
+  handler.createReviewRequest:
+    properties:
+      comment:
+        type: string
+      listingId:
+        type: string
+      rating:
+        type: integer
+    type: object
+  handler.createShipmentRequest:
+    properties:
+      courierName:
+        type: string
+      method:
+        type: string
+      trackingNumber:
+        type: string
+    type: object
+  handler.googleLoginRequest:
+    properties:
+      idToken:
+        type: string
+    type: object
+  handler.loginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.registerRequest:
+    properties:
+      dormBuilding:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.startConversationRequest:
+    properties:
+      listingId:
+        type: string
+    type: object
+  handler.updateListingRequest:
+    properties:
+      categoryId:
+        type: string
+      condition:
+        type: string
+      description:
+        type: string
+      price:
+        type: integer
+      title:
+        type: string
+    type: object
+  handler.updateShipmentStatusRequest:
+    properties:
+      note:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.updateStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  models.Category:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  models.Conversation:
+    properties:
+      buyerId:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastMessage:
+        $ref: '#/definitions/models.Message'
+      lastMessageAt:
+        type: string
+      listing:
+        $ref: '#/definitions/models.Listing'
+      listingId:
+        type: string
+      otherParty:
+        allOf:
+        - $ref: '#/definitions/models.PublicUser'
+        description: เติมตอน list ให้ frontend ไม่ต้องเดาเองว่าใครคือ "อีกฝ่าย"
+      sellerId:
+        type: string
+    type: object
+  models.Listing:
+    properties:
+      categoryId:
+        type: string
+      condition:
+        $ref: '#/definitions/models.ListingCondition'
+      createdAt:
+        type: string
+      deletedAt:
+        description: nil = ยังไม่ถูกลบ
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/models.ListingImage'
+        type: array
+      price:
+        description: หน่วยเป็นบาท เก็บเป็นจำนวนเต็มเพื่อเลี่ยงปัญหา float
+        type: integer
+      seller:
+        $ref: '#/definitions/models.PublicUser'
+      sellerId:
+        type: string
+      status:
+        $ref: '#/definitions/models.ListingStatus'
+      suggestedPrice:
+        type: integer
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.ListingCondition:
+    enum:
+    - new
+    - like_new
+    - good
+    - worn
+    type: string
+    x-enum-varnames:
+    - ConditionNew
+    - ConditionLikeNew
+    - ConditionGood
+    - ConditionWorn
+  models.ListingImage:
+    properties:
+      id:
+        type: string
+      listingId:
+        type: string
+      sortOrder:
+        type: integer
+      url:
+        type: string
+    type: object
+  models.ListingStatus:
+    enum:
+    - available
+    - reserved
+    - sold
+    type: string
+    x-enum-varnames:
+    - StatusAvailable
+    - StatusReserved
+    - StatusSold
+  models.Message:
+    properties:
+      content:
+        type: string
+      conversationId:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      senderId:
+        type: string
+    type: object
+  models.PublicUser:
+    properties:
+      avatarUrl:
+        type: string
+      dormBuilding:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      trustScore:
+        type: integer
+    type: object
+  models.Review:
+    properties:
+      comment:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      listingId:
+        type: string
+      rating:
+        description: 1-5
+        type: integer
+      revieweeId:
+        type: string
+      reviewer:
+        $ref: '#/definitions/models.PublicUser'
+      reviewerId:
+        type: string
+    type: object
+  models.Shipment:
+    properties:
+      conversationId:
+        type: string
+      courierName:
+        type: string
+      createdAt:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/models.ShipmentEvent'
+        type: array
+      id:
+        type: string
+      method:
+        $ref: '#/definitions/models.ShipmentMethod'
+      status:
+        $ref: '#/definitions/models.ShipmentStatus'
+      trackingNumber:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.ShipmentEvent:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      shipmentId:
+        type: string
+      status:
+        $ref: '#/definitions/models.ShipmentStatus'
+    type: object
+  models.ShipmentMethod:
+    enum:
+    - pickup
+    - delivery
+    type: string
+    x-enum-varnames:
+    - ShipmentMethodPickup
+    - ShipmentMethodDelivery
+  models.ShipmentStatus:
+    enum:
+    - pending
+    - shipped
+    - completed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - ShipmentPending
+    - ShipmentShipped
+    - ShipmentCompleted
+    - ShipmentCancelled
+  models.User:
+    properties:
+      avatarUrl:
+        type: string
+      createdAt:
+        type: string
+      dormBuilding:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      trustScore:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: tnswnb@gmail.com
+    name: DormMarket Support
+  description: REST API สำหรับแพลตฟอร์มตลาดซื้อขายของมือสองในหอ/มหาลัย (DormMarket)
+  license:
+    name: MIT
+  title: DormMarket API
+  version: "1.0"
+paths:
+  /api/auth/google:
+    post:
+      consumes:
+      - application/json
+      description: รับ ID token จาก Google Identity Services (frontend ใช้ Google
+        Sign-In button ได้ token นี้มาโดยตรง ไม่ต้อง redirect ไปมา) แลกเป็น JWT token
+        ของระบบ
+      parameters:
+      - description: Google ID token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.googleLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.authResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "501":
+          description: Google Login ยังไม่เปิดใช้งาน
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: เข้าสู่ระบบด้วย Google
+      tags:
+      - auth
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: เข้าสู่ระบบด้วยอีเมล/รหัสผ่าน คืน JWT token
+      parameters:
+      - description: อีเมลและรหัสผ่าน
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.authResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: เข้าสู่ระบบ
+      tags:
+      - auth
+  /api/auth/me:
+    get:
+      description: คืนข้อมูลผู้ใช้ที่ login อยู่ ตาม JWT token ที่แนบมา
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ข้อมูลผู้ใช้ปัจจุบัน
+      tags:
+      - auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: สร้างบัญชีผู้ใช้ด้วยอีเมล/รหัสผ่าน แล้วคืน JWT token กลับมาทันที
+      parameters:
+      - description: ข้อมูลสมัครสมาชิก
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.authResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: สมัครสมาชิกใหม่
+      tags:
+      - auth
+  /api/categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: รายการหมวดหมู่สินค้าทั้งหมด
+      tags:
+      - categories
+  /api/conversations:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Conversation'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: รายการบทสนทนาของฉัน (inbox)
+      tags:
+      - chat
+    post:
+      consumes:
+      - application/json
+      description: เรียกตอนกดปุ่ม "ติดต่อผู้ขาย" — idempotent เรียกซ้ำกี่ครั้งก็ได้ห้องเดิม
+      parameters:
+      - description: รหัสประกาศที่จะเริ่มคุย
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.startConversationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Conversation'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: เริ่มบทสนทนากับผู้ขาย
+      tags:
+      - chat
+  /api/conversations/{id}:
+    get:
+      description: คืนข้อมูล conversation พร้อม listing แนบมาด้วย ใช้ตอนเปิดหน้าแชท
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Conversation'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: รายละเอียดบทสนทนา
+      tags:
+      - chat
+  /api/conversations/{id}/messages:
+    get:
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Message'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: รายการข้อความในบทสนทนา
+      tags:
+      - chat
+  /api/conversations/{id}/shipment:
+    get:
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Shipment'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ดูข้อมูลการจัดส่ง
+      tags:
+      - shipments
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ข้อมูลการจัดส่ง
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createShipmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Shipment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: สร้างข้อมูลการจัดส่ง (ผู้ขายเท่านั้น)
+      tags:
+      - shipments
+  /api/conversations/{id}/shipment/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'สถานะที่รองรับ: pending, shipped, completed, cancelled'
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: สถานะใหม่ + หมายเหตุ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateShipmentStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Shipment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: อัปเดตสถานะการจัดส่ง (ผู้ขายเท่านั้น)
+      tags:
+      - shipments
+  /api/listings:
+    get:
+      parameters:
+      - description: กรองตามหมวดหมู่
+        in: query
+        name: categoryId
+        type: string
+      - description: กรองตามผู้ขาย
+        in: query
+        name: sellerId
+        type: string
+      - description: คำค้นหาในชื่อ/รายละเอียด
+        in: query
+        name: search
+        type: string
+      - description: ราคาต่ำสุด
+        in: query
+        name: minPrice
+        type: integer
+      - description: ราคาสูงสุด
+        in: query
+        name: maxPrice
+        type: integer
+      - description: เลื่อนหน้า (pagination offset)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Listing'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: ค้นหา/รายการประกาศ
+      tags:
+      - listings
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ข้อมูลประกาศ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createListingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Listing'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ลงประกาศขายสินค้าใหม่
+      tags:
+      - listings
+  /api/listings/{id}:
+    delete:
+      parameters:
+      - description: Listing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ลบสำเร็จ
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ลบประกาศ (soft delete, เจ้าของเท่านั้น)
+      tags:
+      - listings
+    get:
+      parameters:
+      - description: Listing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Listing'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: รายละเอียดประกาศ 1 ชิ้น
+      tags:
+      - listings
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Listing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ข้อมูลประกาศที่แก้ไข
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateListingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Listing'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: แก้ไขประกาศ (เจ้าของเท่านั้น)
+      tags:
+      - listings
+  /api/listings/{id}/can-review:
+    get:
+      description: ใช้โชว์/ซ่อนปุ่ม "เขียนรีวิว" ฝั่ง frontend
+      parameters:
+      - description: Listing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: เช็คว่ารีวิวประกาศนี้ได้หรือยัง
+      tags:
+      - reviews
+  /api/listings/{id}/images:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Listing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ไฟล์รูปภาพ (อัปโหลดได้หลายรูป)
+        in: formData
+        name: images
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Listing'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: อัปโหลดรูปสินค้า (เจ้าของเท่านั้น)
+      tags:
+      - listings
+  /api/listings/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'สถานะที่รองรับ: available, reserved, sold'
+      parameters:
+      - description: Listing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: สถานะใหม่
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: เปลี่ยนสถานะประกาศ (เจ้าของเท่านั้น)
+      tags:
+      - listings
+  /api/listings/search-by-image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: รับรูป 1 รูป คืนรายการประกาศที่มีรูปคล้ายกันที่สุด (ต้องเปิดใช้งาน
+        ML_SERVICE_URL)
+      parameters:
+      - description: รูปที่จะใช้ค้นหา
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Listing'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "501":
+          description: ปิดใช้งาน image search
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: ค้นหาประกาศด้วยรูปภาพ (image similarity search)
+      tags:
+      - listings
+  /api/listings/suggest-price:
+    get:
+      description: คำนวณจากราคาเฉลี่ยของประกาศอื่นในหมวดหมู่+สภาพเดียวกันที่มีอยู่แล้วในระบบ
+      parameters:
+      - description: รหัสหมวดหมู่
+        in: query
+        name: categoryId
+        required: true
+        type: string
+      - description: สภาพสินค้า (new, like_new, good, worn)
+        in: query
+        name: condition
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: แนะนำราคาสำหรับสินค้า (rule-based)
+      tags:
+      - listings
+  /api/reviews:
+    post:
+      consumes:
+      - application/json
+      description: รีวิวได้เฉพาะประกาศที่สถานะ sold แล้วและเป็นผู้ซื้อในสนทนานั้นจริง
+      parameters:
+      - description: ข้อมูลรีวิว
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Review'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: เขียนรีวิวผู้ขาย
+      tags:
+      - reviews
+  /api/users/{id}/reviews:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Review'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: รีวิวทั้งหมดของผู้ใช้คนหนึ่ง (public)
+      tags:
+      - reviews
+securityDefinitions:
+  BearerAuth:
+    description: พิมพ์ "Bearer" ตามด้วยเว้นวรรคแล้วตามด้วย JWT token เช่น "Bearer
+      eyJhbGc..."
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

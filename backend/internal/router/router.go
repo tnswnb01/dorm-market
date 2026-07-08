@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	"dormmarket/internal/auth"
 	"dormmarket/internal/handler"
 )
@@ -59,6 +61,9 @@ func New(h Handlers) http.Handler {
 	// --- Static file (รูปที่อัปโหลด) ---
 	fs := http.FileServer(http.Dir(h.UploadsDir))
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", fs))
+
+	// --- API docs (Swagger UI) — สร้าง/อัปเดต spec ด้วย `swag init` ที่ backend/ ---
+	mux.Handle("GET /swagger/", httpSwagger.WrapHandler)
 
 	return loggingMiddleware(corsMiddleware(h.AllowOrigin, mux))
 }

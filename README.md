@@ -154,6 +154,13 @@ Handler/repository/router ยังไม่มี test เพราะต้อ
 
 ## API Endpoints (Phase 1)
 
+เอกสาร API แบบ interactive (Swagger UI) — รัน backend แล้วเปิด
+`http://localhost:8080/swagger/index.html` ทดลองยิง request ได้จากในเบราว์เซอร์เลย
+(กด "Authorize" แล้วใส่ `Bearer <token>` สำหรับ endpoint ที่ต้อง login)
+
+แก้ไข annotation ใน handler แล้วรัน `swag init -g cmd/api/main.go -o ./docs --parseInternal`
+ที่โฟลเดอร์ `backend/` เพื่อ regenerate spec
+
 | Method | Path | ต้อง login | คำอธิบาย |
 |---|---|---|---|
 | POST | `/api/auth/register` | ❌ | สมัครสมาชิก |

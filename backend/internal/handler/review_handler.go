@@ -25,6 +25,19 @@ type createReviewRequest struct {
 	Comment   string `json:"comment"`
 }
 
+// Create godoc
+// @Summary		เขียนรีวิวผู้ขาย
+// @Description	รีวิวได้เฉพาะประกาศที่สถานะ sold แล้วและเป็นผู้ซื้อในสนทนานั้นจริง
+// @Tags			reviews
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		createReviewRequest	true	"ข้อมูลรีวิว"
+// @Success		201		{object}	models.Review
+// @Failure		400		{object}	ErrorResponse
+// @Failure		401		{object}	ErrorResponse
+// @Failure		404		{object}	ErrorResponse
+// @Router			/api/reviews [post]
 func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -60,7 +73,14 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListForUser — GET /api/users/{id}/reviews (public — ใครก็ดูรีวิวของผู้ขายคนไหนก็ได้)
+// ListForUser godoc
+// @Summary	รีวิวทั้งหมดของผู้ใช้คนหนึ่ง (public)
+// @Tags		reviews
+// @Produce	json
+// @Param		id	path		string	true	"User ID"
+// @Success	200	{array}		models.Review
+// @Failure	500	{object}	ErrorResponse
+// @Router		/api/users/{id}/reviews [get]
 func (h *ReviewHandler) ListForUser(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("id")
 	reviews, err := h.reviews.ListForUser(r.Context(), userID)
@@ -74,7 +94,16 @@ func (h *ReviewHandler) ListForUser(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, reviews)
 }
 
-// CanReview — GET /api/listings/{id}/can-review (ต้อง login) ใช้โชว์/ซ่อนปุ่ม "เขียนรีวิว" ฝั่ง frontend
+// CanReview godoc
+// @Summary		เช็คว่ารีวิวประกาศนี้ได้หรือยัง
+// @Description	ใช้โชว์/ซ่อนปุ่ม "เขียนรีวิว" ฝั่ง frontend
+// @Tags			reviews
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id	path		string	true	"Listing ID"
+// @Success		200	{object}	map[string]bool
+// @Failure		401	{object}	ErrorResponse
+// @Router			/api/listings/{id}/can-review [get]
 func (h *ReviewHandler) CanReview(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {

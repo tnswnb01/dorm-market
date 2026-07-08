@@ -29,8 +29,19 @@ type startConversationRequest struct {
 	ListingID string `json:"listingId"`
 }
 
-// StartConversation — POST /api/conversations (ต้อง login)
-// เรียกตอนกดปุ่ม "ติดต่อผู้ขาย" — idempotent เรียกซ้ำกี่ครั้งก็ได้ห้องเดิม
+// StartConversation godoc
+// @Summary		เริ่มบทสนทนากับผู้ขาย
+// @Description	เรียกตอนกดปุ่ม "ติดต่อผู้ขาย" — idempotent เรียกซ้ำกี่ครั้งก็ได้ห้องเดิม
+// @Tags			chat
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		startConversationRequest	true	"รหัสประกาศที่จะเริ่มคุย"
+// @Success		200		{object}	models.Conversation
+// @Failure		400		{object}	ErrorResponse
+// @Failure		401		{object}	ErrorResponse
+// @Failure		404		{object}	ErrorResponse
+// @Router			/api/conversations [post]
 func (h *ChatHandler) StartConversation(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -57,7 +68,14 @@ func (h *ChatHandler) StartConversation(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// ListConversations — GET /api/conversations (ต้อง login) — หน้า inbox
+// ListConversations godoc
+// @Summary	รายการบทสนทนาของฉัน (inbox)
+// @Tags		chat
+// @Produce	json
+// @Security	BearerAuth
+// @Success	200	{array}		models.Conversation
+// @Failure	401	{object}	ErrorResponse
+// @Router		/api/conversations [get]
 func (h *ChatHandler) ListConversations(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -76,8 +94,18 @@ func (h *ChatHandler) ListConversations(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, conversations)
 }
 
-// GetDetails — GET /api/conversations/{id} (ต้อง login + เป็นคู่สนทนา)
-// คืนข้อมูล conversation พร้อม listing แนบมาด้วย ใช้ตอนเปิดหน้าแชท
+// GetDetails godoc
+// @Summary		รายละเอียดบทสนทนา
+// @Description	คืนข้อมูล conversation พร้อม listing แนบมาด้วย ใช้ตอนเปิดหน้าแชท
+// @Tags			chat
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id	path		string	true	"Conversation ID"
+// @Success		200	{object}	models.Conversation
+// @Failure		401	{object}	ErrorResponse
+// @Failure		403	{object}	ErrorResponse
+// @Failure		404	{object}	ErrorResponse
+// @Router			/api/conversations/{id} [get]
 func (h *ChatHandler) GetDetails(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -99,7 +127,17 @@ func (h *ChatHandler) GetDetails(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListMessages — GET /api/conversations/{id}/messages (ต้อง login + เป็นคู่สนทนา)
+// ListMessages godoc
+// @Summary	รายการข้อความในบทสนทนา
+// @Tags		chat
+// @Produce	json
+// @Security	BearerAuth
+// @Param		id	path		string	true	"Conversation ID"
+// @Success	200	{array}		models.Message
+// @Failure	401	{object}	ErrorResponse
+// @Failure	403	{object}	ErrorResponse
+// @Failure	404	{object}	ErrorResponse
+// @Router		/api/conversations/{id}/messages [get]
 func (h *ChatHandler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {

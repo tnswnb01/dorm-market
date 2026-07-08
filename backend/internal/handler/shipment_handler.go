@@ -41,7 +41,19 @@ func shipmentErrorStatus(err error) int {
 	}
 }
 
-// Create — POST /api/conversations/{id}/shipment (ผู้ขายเท่านั้น)
+// Create godoc
+// @Summary	สร้างข้อมูลการจัดส่ง (ผู้ขายเท่านั้น)
+// @Tags		shipments
+// @Accept		json
+// @Produce	json
+// @Security	BearerAuth
+// @Param		id		path		string					true	"Conversation ID"
+// @Param		request	body		createShipmentRequest	true	"ข้อมูลการจัดส่ง"
+// @Success	201		{object}	models.Shipment
+// @Failure	400		{object}	ErrorResponse
+// @Failure	403		{object}	ErrorResponse
+// @Failure	404		{object}	ErrorResponse
+// @Router		/api/conversations/{id}/shipment [post]
 func (h *ShipmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -70,7 +82,16 @@ func (h *ShipmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, shipment)
 }
 
-// Get — GET /api/conversations/{id}/shipment (ผู้ซื้อหรือผู้ขายในสนทนานั้น)
+// Get godoc
+// @Summary	ดูข้อมูลการจัดส่ง
+// @Tags		shipments
+// @Produce	json
+// @Security	BearerAuth
+// @Param		id	path		string	true	"Conversation ID"
+// @Success	200	{object}	models.Shipment
+// @Failure	403	{object}	ErrorResponse
+// @Failure	404	{object}	ErrorResponse
+// @Router		/api/conversations/{id}/shipment [get]
 func (h *ShipmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -92,7 +113,20 @@ type updateShipmentStatusRequest struct {
 	Note   string `json:"note"`
 }
 
-// UpdateStatus — PATCH /api/conversations/{id}/shipment/status (ผู้ขายเท่านั้น)
+// UpdateStatus godoc
+// @Summary		อัปเดตสถานะการจัดส่ง (ผู้ขายเท่านั้น)
+// @Description	สถานะที่รองรับ: pending, shipped, completed, cancelled
+// @Tags			shipments
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		string						true	"Conversation ID"
+// @Param			request	body		updateShipmentStatusRequest	true	"สถานะใหม่ + หมายเหตุ"
+// @Success		200		{object}	models.Shipment
+// @Failure		400		{object}	ErrorResponse
+// @Failure		403		{object}	ErrorResponse
+// @Failure		404		{object}	ErrorResponse
+// @Router			/api/conversations/{id}/shipment/status [patch]
 func (h *ShipmentHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {

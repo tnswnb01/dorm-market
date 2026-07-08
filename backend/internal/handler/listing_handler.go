@@ -35,6 +35,17 @@ type createListingRequest struct {
 	Price       int    `json:"price"`
 }
 
+// Create godoc
+// @Summary	ลงประกาศขายสินค้าใหม่
+// @Tags		listings
+// @Accept		json
+// @Produce	json
+// @Security	BearerAuth
+// @Param		request	body		createListingRequest	true	"ข้อมูลประกาศ"
+// @Success	201		{object}	models.Listing
+// @Failure	400		{object}	ErrorResponse
+// @Failure	401		{object}	ErrorResponse
+// @Router		/api/listings [post]
 func (h *ListingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -72,7 +83,19 @@ type updateListingRequest struct {
 	Price       int    `json:"price"`
 }
 
-// Update — PUT /api/listings/{id} (เจ้าของเท่านั้น)
+// Update godoc
+// @Summary	แก้ไขประกาศ (เจ้าของเท่านั้น)
+// @Tags		listings
+// @Accept		json
+// @Produce	json
+// @Security	BearerAuth
+// @Param		id		path		string					true	"Listing ID"
+// @Param		request	body		updateListingRequest	true	"ข้อมูลประกาศที่แก้ไข"
+// @Success	200		{object}	models.Listing
+// @Failure	400		{object}	ErrorResponse
+// @Failure	401		{object}	ErrorResponse
+// @Failure	404		{object}	ErrorResponse
+// @Router		/api/listings/{id} [put]
 func (h *ListingHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -110,7 +133,15 @@ func (h *ListingHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Delete — DELETE /api/listings/{id} (เจ้าของเท่านั้น) เป็น soft delete
+// Delete godoc
+// @Summary	ลบประกาศ (soft delete, เจ้าของเท่านั้น)
+// @Tags		listings
+// @Security	BearerAuth
+// @Param		id	path	string	true	"Listing ID"
+// @Success	204	"ลบสำเร็จ"
+// @Failure	401	{object}	ErrorResponse
+// @Failure	404	{object}	ErrorResponse
+// @Router		/api/listings/{id} [delete]
 func (h *ListingHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -131,6 +162,14 @@ func (h *ListingHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// Get godoc
+// @Summary	รายละเอียดประกาศ 1 ชิ้น
+// @Tags		listings
+// @Produce	json
+// @Param		id	path		string	true	"Listing ID"
+// @Success	200	{object}	models.Listing
+// @Failure	404	{object}	ErrorResponse
+// @Router		/api/listings/{id} [get]
 func (h *ListingHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	listing, err := h.listings.Get(r.Context(), id)
@@ -145,6 +184,19 @@ func (h *ListingHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, listing)
 }
 
+// List godoc
+// @Summary	ค้นหา/รายการประกาศ
+// @Tags		listings
+// @Produce	json
+// @Param		categoryId	query	string	false	"กรองตามหมวดหมู่"
+// @Param		sellerId	query	string	false	"กรองตามผู้ขาย"
+// @Param		search		query	string	false	"คำค้นหาในชื่อ/รายละเอียด"
+// @Param		minPrice	query	int		false	"ราคาต่ำสุด"
+// @Param		maxPrice	query	int		false	"ราคาสูงสุด"
+// @Param		offset		query	int		false	"เลื่อนหน้า (pagination offset)"
+// @Success	200			{array}		models.Listing
+// @Failure	500			{object}	ErrorResponse
+// @Router		/api/listings [get]
 func (h *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	filter := models.ListingFilter{
@@ -179,6 +231,19 @@ func (h *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, listings)
 }
 
+// UploadImage godoc
+// @Summary	อัปโหลดรูปสินค้า (เจ้าของเท่านั้น)
+// @Tags		listings
+// @Accept		multipart/form-data
+// @Produce	json
+// @Security	BearerAuth
+// @Param		id		path		string	true	"Listing ID"
+// @Param		images	formData	file	true	"ไฟล์รูปภาพ (อัปโหลดได้หลายรูป)"
+// @Success	200		{object}	models.Listing
+// @Failure	400		{object}	ErrorResponse
+// @Failure	401		{object}	ErrorResponse
+// @Failure	403		{object}	ErrorResponse
+// @Router		/api/listings/{id}/images [post]
 func (h *ListingHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -246,6 +311,19 @@ type updateStatusRequest struct {
 	Status string `json:"status"`
 }
 
+// UpdateStatus godoc
+// @Summary		เปลี่ยนสถานะประกาศ (เจ้าของเท่านั้น)
+// @Description	สถานะที่รองรับ: available, reserved, sold
+// @Tags			listings
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		string					true	"Listing ID"
+// @Param			request	body		updateStatusRequest	true	"สถานะใหม่"
+// @Success		200		{object}	map[string]string
+// @Failure		401		{object}	ErrorResponse
+// @Failure		404		{object}	ErrorResponse
+// @Router			/api/listings/{id}/status [patch]
 func (h *ListingHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -273,6 +351,16 @@ func (h *ListingHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": req.Status})
 }
 
+// SuggestPrice godoc
+// @Summary		แนะนำราคาสำหรับสินค้า (rule-based)
+// @Description	คำนวณจากราคาเฉลี่ยของประกาศอื่นในหมวดหมู่+สภาพเดียวกันที่มีอยู่แล้วในระบบ
+// @Tags			listings
+// @Produce		json
+// @Param			categoryId	query		string	true	"รหัสหมวดหมู่"
+// @Param			condition	query		string	true	"สภาพสินค้า (new, like_new, good, worn)"
+// @Success		200			{object}	map[string]any
+// @Failure		400			{object}	ErrorResponse
+// @Router			/api/listings/suggest-price [get]
 func (h *ListingHandler) SuggestPrice(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	suggestion, err := h.listings.SuggestPrice(
@@ -300,8 +388,17 @@ func randomID() string {
 	return hex.EncodeToString(b)
 }
 
-// SearchByImage — POST /api/listings/search-by-image (public, ไม่ต้อง login)
-// รับรูป 1 รูป คืนรายการประกาศที่มีรูปคล้ายกันที่สุด
+// SearchByImage godoc
+// @Summary		ค้นหาประกาศด้วยรูปภาพ (image similarity search)
+// @Description	รับรูป 1 รูป คืนรายการประกาศที่มีรูปคล้ายกันที่สุด (ต้องเปิดใช้งาน ML_SERVICE_URL)
+// @Tags			listings
+// @Accept			multipart/form-data
+// @Produce		json
+// @Param			file	formData	file	true	"รูปที่จะใช้ค้นหา"
+// @Success		200		{array}		models.Listing
+// @Failure		400		{object}	ErrorResponse
+// @Failure		501		{object}	ErrorResponse	"ปิดใช้งาน image search"
+// @Router			/api/listings/search-by-image [post]
 func (h *ListingHandler) SearchByImage(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		writeError(w, http.StatusBadRequest, errors.New("อัปโหลดไฟล์ไม่สำเร็จ"))
