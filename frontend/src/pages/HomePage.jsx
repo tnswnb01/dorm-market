@@ -65,39 +65,45 @@ export default function HomePage() {
 
   return (
     <div>
-      <div className="py-10 text-center">
-        <h1 className="mb-2 font-display text-[clamp(28px,4vw,40px)]">ตลาดมือสองในหอ</h1>
-        <p className="text-ink-soft">ซื้อขายของมือสองกับเพื่อนในหอ/มหาลัยเดียวกัน ปลอดภัย ใกล้ตัว</p>
-      </div>
+      <section className="relative mb-6 overflow-hidden rounded-2xl bg-ink px-6 pb-16 pt-12 text-center sm:pb-20 sm:pt-16">
+        <h1 className="mb-3 text-balance font-display text-[clamp(30px,5vw,52px)] font-semibold leading-[1.05] text-white">
+          ตลาดมือสองในหอ
+        </h1>
+        <p className="mx-auto max-w-sm text-[15px] text-white/70">
+          ซื้อขายของมือสองกับเพื่อนในหอ/มหาลัยเดียวกัน ปลอดภัย ใกล้ตัว
+        </p>
+      </section>
 
-      <div className="mb-4 flex gap-2">
-        <input
-          className="flex-1 rounded-md border border-line bg-surface px-4 py-3 text-[15px]"
-          placeholder="ค้นหาสินค้า..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={imageSearchLoading}
-          className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-4 py-3 text-sm font-medium text-ink-soft transition hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-55"
-          title="ค้นหาด้วยรูปภาพ"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <circle cx="12" cy="12" r="3.5" />
-            <path d="M8 5l1.5-2h5L16 5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="hidden sm:inline">{imageSearchLoading ? 'กำลังค้นหา...' : 'ค้นหาด้วยรูป'}</span>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={handleImageSearch}
-        />
+      <div className="relative -mt-10 mb-4 sm:-mt-12">
+        <div className="mx-auto flex max-w-xl gap-2 rounded-xl bg-surface p-2 shadow-card">
+          <input
+            className="flex-1 rounded-lg border border-line bg-bg px-4 py-3 text-[15px]"
+            placeholder="ค้นหาสินค้า..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={imageSearchLoading}
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-bg px-4 py-3 text-sm font-medium text-ink-soft transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-55"
+            title="ค้นหาด้วยรูปภาพ"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <circle cx="12" cy="12" r="3.5" />
+              <path d="M8 5l1.5-2h5L16 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="hidden sm:inline">{imageSearchLoading ? 'กำลังค้นหา...' : 'ค้นหาด้วยรูป'}</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleImageSearch}
+          />
+        </div>
       </div>
 
       {imageResults === null && (

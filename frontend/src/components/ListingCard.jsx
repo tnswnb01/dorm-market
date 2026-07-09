@@ -14,7 +14,7 @@ export default function ListingCard({ listing }) {
   return (
     <Link
       to={`/listings/${listing.id}`}
-      className="relative block overflow-hidden rounded-xl bg-surface shadow-card"
+      className="relative block overflow-hidden rounded-xl bg-surface shadow-card transition-transform duration-150 hover:-translate-y-1 motion-reduce:transition-none"
     >
       <span className="absolute left-3 top-3 z-10 h-2.5 w-2.5 rounded-full border border-line bg-bg" />
       <div className="aspect-square bg-neutral-200">

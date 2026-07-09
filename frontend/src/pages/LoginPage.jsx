@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import GoogleSignInButton from '../components/GoogleSignInButton'
+import FieldError from '../components/FieldError'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function fieldCls(hasError) {
+  return `w-full rounded-md border bg-surface px-3 py-2.5 text-sm ${hasError ? 'border-red' : 'border-line'}`
+}
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -9,10 +16,34 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false)
+
+  function updateEmail(value) {
+    setEmail(value)
+    setFieldErrors((fe) => (fe.email ? { ...fe, email: '' } : fe))
+  }
+
+  function updatePassword(value) {
+    setPassword(value)
+    setFieldErrors((fe) => (fe.password ? { ...fe, password: '' } : fe))
+  }
+
+  function validate() {
+    const errors = {}
+    if (!email.trim()) errors.email = 'กรุณากรอกอีเมล'
+    else if (!EMAIL_RE.test(email)) errors.email = 'รูปแบบอีเมลไม่ถูกต้อง'
+    if (!password) errors.password = 'กรุณากรอกรหัสผ่าน'
+    return errors
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const errors = validate()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -30,29 +61,32 @@ export default function LoginPage() {
       <form
         className="w-full max-w-[380px] rounded-xl bg-surface p-8 shadow-card"
         onSubmit={handleSubmit}
+        noValidate
       >
         <h1 className="mb-5 font-display text-2xl">เข้าสู่ระบบ</h1>
 
         <label className="mb-4 block">
           <span className="mb-1.5 block text-xs text-ink-soft">อีเมล</span>
           <input
-            className="w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm"
+            className={fieldCls(!!fieldErrors.email)}
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => updateEmail(e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.email} />
         </label>
 
         <label className="mb-4 block">
           <span className="mb-1.5 block text-xs text-ink-soft">รหัสผ่าน</span>
           <input
-            className="w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm"
+            className={fieldCls(!!fieldErrors.password)}
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => updatePassword(e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.password} />
         </label>
 
         {error && <p className="-mt-1.5 mb-3.5 text-[13px] text-red">{error}</p>}

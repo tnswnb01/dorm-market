@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { listCategories } from '../api/categories'
 import { getListing, updateListing, deleteListing } from '../api/listings'
 import { useAuth } from '../context/AuthContext'
+import FieldError from '../components/FieldError'
 
 const CONDITIONS = [
   { value: 'new', label: 'ใหม่ (ยังไม่แกะ/ยังไม่ใช้)' },
@@ -11,8 +12,12 @@ const CONDITIONS = [
   { value: 'worn', label: 'ใช้งานมาเยอะ' },
 ]
 
-const inputCls = 'w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm'
+const inputCls = 'w-full rounded-md border bg-surface px-3 py-2.5 text-sm'
 const labelCls = 'mb-1.5 block text-xs text-ink-soft'
+
+function fieldCls(hasError) {
+  return `${inputCls} ${hasError ? 'border-red' : 'border-line'}`
+}
 
 export default function EditListingPage() {
   const { id } = useParams()
@@ -22,6 +27,7 @@ export default function EditListingPage() {
   const [form, setForm] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -46,10 +52,24 @@ export default function EditListingPage() {
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+    setFieldErrors((fe) => (fe[field] ? { ...fe, [field]: '' } : fe))
+  }
+
+  function validate() {
+    const errors = {}
+    if (!form.title.trim()) errors.title = 'กรุณากรอกชื่อสินค้า'
+    if (!form.categoryId) errors.categoryId = 'กรุณาเลือกหมวดหมู่'
+    if (!form.price || Number(form.price) <= 0) errors.price = 'กรุณากรอกราคาที่ถูกต้อง'
+    return errors
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const errors = validate()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -82,22 +102,23 @@ export default function EditListingPage() {
     <div>
       <h1 className="mb-5 font-display text-[26px]">แก้ไขประกาศ</h1>
 
-      <form className="max-w-[520px]" onSubmit={handleSubmit}>
+      <form className="max-w-[520px]" onSubmit={handleSubmit} noValidate>
         <label className="mb-4 block">
           <span className={labelCls}>ชื่อสินค้า</span>
           <input
-            className={inputCls}
+            className={fieldCls(!!fieldErrors.title)}
             value={form.title}
             onChange={(e) => update('title', e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.title} />
         </label>
 
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block">
             <span className={labelCls}>หมวดหมู่</span>
             <select
-              className={inputCls}
+              className={fieldCls(!!fieldErrors.categoryId)}
               value={form.categoryId}
               onChange={(e) => update('categoryId', e.target.value)}
               required
@@ -108,12 +129,13 @@ export default function EditListingPage() {
                 </option>
               ))}
             </select>
+            <FieldError message={fieldErrors.categoryId} />
           </label>
 
           <label className="block">
             <span className={labelCls}>สภาพสินค้า</span>
             <select
-              className={inputCls}
+              className={inputCls + ' border-line'}
               value={form.condition}
               onChange={(e) => update('condition', e.target.value)}
             >
@@ -129,19 +151,20 @@ export default function EditListingPage() {
         <label className="mb-4 block">
           <span className={labelCls}>ราคา (บาท)</span>
           <input
-            className={inputCls}
+            className={fieldCls(!!fieldErrors.price)}
             type="number"
             min="1"
             value={form.price}
             onChange={(e) => update('price', e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.price} />
         </label>
 
         <label className="mb-4 block">
           <span className={labelCls}>รายละเอียด</span>
           <textarea
-            className={`${inputCls} resize-y`}
+            className={`${inputCls} border-line resize-y`}
             rows={5}
             value={form.description}
             onChange={(e) => update('description', e.target.value)}

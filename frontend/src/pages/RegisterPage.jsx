@@ -2,20 +2,44 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import GoogleSignInButton from '../components/GoogleSignInButton'
+import FieldError from '../components/FieldError'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function fieldCls(hasError) {
+  return `w-full rounded-md border bg-surface px-3 py-2.5 text-sm ${hasError ? 'border-red' : 'border-line'}`
+}
 
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', email: '', password: '', dormBuilding: '' })
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false)
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+    setFieldErrors((fe) => (fe[field] ? { ...fe, [field]: '' } : fe))
+  }
+
+  function validate() {
+    const errors = {}
+    if (!form.name.trim()) errors.name = 'กรุณากรอกชื่อ'
+    if (!form.email.trim()) errors.email = 'กรุณากรอกอีเมล'
+    else if (!EMAIL_RE.test(form.email)) errors.email = 'รูปแบบอีเมลไม่ถูกต้อง'
+    if (!form.password) errors.password = 'กรุณากรอกรหัสผ่าน'
+    else if (form.password.length < 8) errors.password = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'
+    return errors
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const errors = validate()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -33,39 +57,43 @@ export default function RegisterPage() {
       <form
         className="w-full max-w-[380px] rounded-xl bg-surface p-8 shadow-card"
         onSubmit={handleSubmit}
+        noValidate
       >
         <h1 className="mb-5 font-display text-2xl">สมัครสมาชิก</h1>
 
         <label className="mb-4 block">
           <span className="mb-1.5 block text-xs text-ink-soft">ชื่อ</span>
           <input
-            className="w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm"
+            className={fieldCls(!!fieldErrors.name)}
             value={form.name}
             onChange={(e) => update('name', e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.name} />
         </label>
 
         <label className="mb-4 block">
           <span className="mb-1.5 block text-xs text-ink-soft">อีเมล</span>
           <input
-            className="w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm"
+            className={fieldCls(!!fieldErrors.email)}
             type="email"
             value={form.email}
             onChange={(e) => update('email', e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.email} />
         </label>
 
         <label className="mb-4 block">
           <span className="mb-1.5 block text-xs text-ink-soft">รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</span>
           <input
-            className="w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm"
+            className={fieldCls(!!fieldErrors.password)}
             type="password"
             value={form.password}
             onChange={(e) => update('password', e.target.value)}
             required
           />
+          <FieldError message={fieldErrors.password} />
         </label>
 
         <label className="mb-4 block">
