@@ -27,3 +27,6 @@ ml-service/archive/
 Thumbs.db
 .vscode/
 .idea/
+
+# --- Claude Code local config ---
+.claude/
