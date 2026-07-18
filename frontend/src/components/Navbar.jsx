@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { IconChat, IconClose, IconHistory, IconLogout, IconMenu, IconPlus, IconStore, IconTag } from './icons'
+import { useAuth } from '@/features/auth/context/AuthContext'
+import { IconChat, IconClose, IconHistory, IconLogout, IconMenu, IconPlus, IconStore, IconTag } from '@/components/icons'
 
 const NAV_LINKS = [
   { to: '/conversations', label: 'ข้อความ', icon: IconChat },

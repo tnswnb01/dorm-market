@@ -1,4 +1,4 @@
-import { IconStore } from './icons'
+import { IconStore } from '@/components/icons'
 
 export default function Footer() {
   const year = new Date().getFullYear()
