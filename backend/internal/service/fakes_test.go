@@ -43,10 +43,23 @@ func (r *fakeUserRepository) Create(ctx context.Context, u *models.User) error {
 	r.nextID++
 	u.ID = fmt.Sprintf("user-%d", r.nextID)
 	u.TrustScore = 100
+	if u.Role == "" {
+		u.Role = models.RoleUser
+	}
 	u.CreatedAt = time.Now()
 
 	r.byEmail[u.Email] = u
 	r.byID[u.ID] = u
+	return nil
+}
+
+func (r *fakeUserRepository) Ban(ctx context.Context, userID, reason, adminID string) error {
+	u, ok := r.byID[userID]
+	if !ok {
+		return repository.ErrNotFound
+	}
+	u.IsBanned = true
+	u.BanReason = reason
 	return nil
 }
 
@@ -185,6 +198,16 @@ func (r *fakeListingRepository) Update(ctx context.Context, updated *models.List
 func (r *fakeListingRepository) SoftDelete(ctx context.Context, id string, sellerID string) error {
 	l, ok := r.byID[id]
 	if !ok || l.SellerID != sellerID || l.DeletedAt != nil {
+		return repository.ErrNotFound
+	}
+	now := time.Now()
+	l.DeletedAt = &now
+	return nil
+}
+
+func (r *fakeListingRepository) AdminSoftDelete(ctx context.Context, id string) error {
+	l, ok := r.byID[id]
+	if !ok || l.DeletedAt != nil {
 		return repository.ErrNotFound
 	}
 	now := time.Now()
@@ -528,3 +551,139 @@ func (r *fakeShipmentRepository) UpdateStatus(ctx context.Context, shipmentID st
 
 // helper เอาไว้จำลอง unexpected DB error (ไม่ใช่ ErrNotFound) ในเทส
 var errSimulatedDBFailure = errors.New("simulated db failure")
+
+// ---------- fakeReportRepository ----------
+
+type fakeReportRepository struct {
+	byID   map[string]*models.Report
+	nextID int
+}
+
+func newFakeReportRepository() *fakeReportRepository {
+	return &fakeReportRepository{byID: make(map[string]*models.Report)}
+}
+
+func (r *fakeReportRepository) Create(ctx context.Context, report *models.Report) error {
+	r.nextID++
+	report.ID = fmt.Sprintf("report-%d", r.nextID)
+	report.Status = models.ReportPending
+	report.CreatedAt = time.Now()
+	cp := *report
+	r.byID[report.ID] = &cp
+	return nil
+}
+
+func (r *fakeReportRepository) GetByID(ctx context.Context, id string) (*models.Report, error) {
+	rp, ok := r.byID[id]
+	if !ok {
+		return nil, repository.ErrNotFound
+	}
+	cp := *rp
+	return &cp, nil
+}
+
+func (r *fakeReportRepository) List(ctx context.Context, status *models.ReportStatus) ([]models.Report, error) {
+	var out []models.Report
+	for _, rp := range r.byID {
+		if status != nil && rp.Status != *status {
+			continue
+		}
+		out = append(out, *rp)
+	}
+	return out, nil
+}
+
+func (r *fakeReportRepository) Resolve(ctx context.Context, id string, status models.ReportStatus, action models.ReportResolutionAction, note, adminID string) error {
+	rp, ok := r.byID[id]
+	if !ok || rp.Status != models.ReportPending {
+		return repository.ErrNotFound
+	}
+	rp.Status = status
+	rp.ResolutionAction = &action
+	rp.ResolutionNote = note
+	rp.ResolvedBy = &adminID
+	now := time.Now()
+	rp.ResolvedAt = &now
+	return nil
+}
+
+// ---------- fakeTicketRepository ----------
+
+type fakeTicketRepository struct {
+	byID     map[string]*models.SupportTicket
+	messages map[string][]models.TicketMessage
+	nextID   int
+}
+
+func newFakeTicketRepository() *fakeTicketRepository {
+	return &fakeTicketRepository{
+		byID:     make(map[string]*models.SupportTicket),
+		messages: make(map[string][]models.TicketMessage),
+	}
+}
+
+func (r *fakeTicketRepository) CreateTicket(ctx context.Context, ticket *models.SupportTicket) error {
+	r.nextID++
+	ticket.ID = fmt.Sprintf("ticket-%d", r.nextID)
+	ticket.Status = models.TicketOpen
+	ticket.CreatedAt = time.Now()
+	ticket.UpdatedAt = time.Now()
+	cp := *ticket
+	r.byID[ticket.ID] = &cp
+	return nil
+}
+
+func (r *fakeTicketRepository) GetTicket(ctx context.Context, id string) (*models.SupportTicket, error) {
+	t, ok := r.byID[id]
+	if !ok {
+		return nil, repository.ErrNotFound
+	}
+	cp := *t
+	return &cp, nil
+}
+
+func (r *fakeTicketRepository) ListForUser(ctx context.Context, userID string) ([]models.SupportTicket, error) {
+	var out []models.SupportTicket
+	for _, t := range r.byID {
+		if t.UserID == userID {
+			out = append(out, *t)
+		}
+	}
+	return out, nil
+}
+
+func (r *fakeTicketRepository) ListAll(ctx context.Context, status *models.TicketStatus) ([]models.SupportTicket, error) {
+	var out []models.SupportTicket
+	for _, t := range r.byID {
+		if status != nil && t.Status != *status {
+			continue
+		}
+		out = append(out, *t)
+	}
+	return out, nil
+}
+
+func (r *fakeTicketRepository) UpdateStatus(ctx context.Context, id string, status models.TicketStatus) error {
+	t, ok := r.byID[id]
+	if !ok {
+		return repository.ErrNotFound
+	}
+	t.Status = status
+	t.UpdatedAt = time.Now()
+	return nil
+}
+
+func (r *fakeTicketRepository) AddMessage(ctx context.Context, msg *models.TicketMessage) error {
+	if _, ok := r.byID[msg.TicketID]; !ok {
+		return repository.ErrNotFound
+	}
+	r.nextID++
+	msg.ID = fmt.Sprintf("ticket-msg-%d", r.nextID)
+	msg.CreatedAt = time.Now()
+	r.messages[msg.TicketID] = append(r.messages[msg.TicketID], *msg)
+	return nil
+}
+
+func (r *fakeTicketRepository) ListMessages(ctx context.Context, ticketID string) ([]models.TicketMessage, error) {
+	return r.messages[ticketID], nil
+}

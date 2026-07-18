@@ -50,6 +50,8 @@ func main() {
 	chatRepo := repository.NewChatRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)
 	shipmentRepo := repository.NewShipmentRepository(db)
+	reportRepo := repository.NewReportRepository(db)
+	ticketRepo := repository.NewTicketRepository(db)
 
 	// --- Services ---
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
@@ -69,6 +71,8 @@ func main() {
 	chatService := service.NewChatService(chatRepo, listingRepo)
 	reviewService := service.NewReviewService(reviewRepo, listingRepo, chatRepo, userRepo)
 	shipmentService := service.NewShipmentService(shipmentRepo, chatRepo)
+	reportService := service.NewReportService(reportRepo, listingRepo, userRepo)
+	ticketService := service.NewTicketService(ticketRepo)
 
 	// --- Handlers ---
 	authHandler := handler.NewAuthHandler(authService)
@@ -78,6 +82,8 @@ func main() {
 	chatHandler := handler.NewChatHandler(chatService, hub, cfg.JWTSecret)
 	reviewHandler := handler.NewReviewHandler(reviewService)
 	shipmentHandler := handler.NewShipmentHandler(shipmentService)
+	reportHandler := handler.NewReportHandler(reportService)
+	ticketHandler := handler.NewTicketHandler(ticketService)
 
 	// --- Router ---
 	mux := router.New(router.Handlers{
@@ -87,6 +93,9 @@ func main() {
 		Chat:        chatHandler,
 		Review:      reviewHandler,
 		Shipment:    shipmentHandler,
+		Report:      reportHandler,
+		Ticket:      ticketHandler,
+		Users:       userRepo,
 		JWTSecret:   cfg.JWTSecret,
 		UploadsDir:  cfg.UploadsDir,
 		AllowOrigin: cfg.AllowedOrigin,

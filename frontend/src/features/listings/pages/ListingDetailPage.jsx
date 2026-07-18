@@ -5,6 +5,7 @@ import { startConversation } from '@/features/chat/api/chat'
 import { imageUrl } from '@/lib/client'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import ReviewSection from '@/features/reviews/components/ReviewSection'
+import ReportButton from '@/features/reports/components/ReportButton'
 
 const CONDITION_LABEL = {
   new: 'ใหม่',
@@ -130,6 +131,11 @@ export default function ListingDetailPage() {
               คะแนนความน่าเชื่อถือ: <span className="font-semibold text-green">{listing.seller.trustScore}</span>/100
             </p>
           )}
+          {user && !isOwner && (
+            <div className="mt-2">
+              <ReportButton targetType="user" targetId={listing.sellerId} label="รายงานผู้ขาย" />
+            </div>
+          )}
         </div>
 
         {listing.description && (
@@ -159,13 +165,20 @@ export default function ListingDetailPage() {
             </div>
           </div>
         ) : (
-          <button
-            className="block w-full rounded-md bg-orange px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-dark disabled:cursor-not-allowed disabled:opacity-55"
-            onClick={handleContactSeller}
-            disabled={busy}
-          >
-            {busy ? 'กำลังเปิดแชท...' : 'ติดต่อผู้ขาย'}
-          </button>
+          <div>
+            <button
+              className="block w-full rounded-md bg-orange px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-dark disabled:cursor-not-allowed disabled:opacity-55"
+              onClick={handleContactSeller}
+              disabled={busy}
+            >
+              {busy ? 'กำลังเปิดแชท...' : 'ติดต่อผู้ขาย'}
+            </button>
+            {user && (
+              <div className="mt-2 text-center">
+                <ReportButton targetType="listing" targetId={listing.id} label="รายงานประกาศนี้" />
+              </div>
+            )}
+          </div>
         )}
       </div>
       </div>

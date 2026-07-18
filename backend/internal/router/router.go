@@ -9,6 +9,7 @@ import (
 
 	"dormmarket/internal/auth"
 	"dormmarket/internal/handler"
+	"dormmarket/internal/repository"
 )
 
 type Handlers struct {
@@ -18,6 +19,9 @@ type Handlers struct {
 	Chat        *handler.ChatHandler
 	Review      *handler.ReviewHandler
 	Shipment    *handler.ShipmentHandler
+	Report      *handler.ReportHandler
+	Ticket      *handler.TicketHandler
+	Users       repository.UserRepository
 	JWTSecret   string
 	UploadsDir  string
 	AllowOrigin string
@@ -37,26 +41,47 @@ func New(h Handlers) http.Handler {
 	mux.HandleFunc("GET /api/listings/{id}", h.Listing.Get)
 	mux.HandleFunc("GET /api/users/{id}/reviews", h.Review.ListForUser)
 
-	// --- Protected routes (ต้องแนบ Bearer token) ---
+	// --- Protected routes (ต้องแนบ Bearer token + บัญชีต้องไม่ถูกแบน) ---
 	authMW := auth.Middleware(h.JWTSecret)
-	mux.Handle("GET /api/auth/me", authMW(http.HandlerFunc(h.Auth.Me)))
-	mux.Handle("POST /api/listings", authMW(http.HandlerFunc(h.Listing.Create)))
-	mux.Handle("PUT /api/listings/{id}", authMW(http.HandlerFunc(h.Listing.Update)))
-	mux.Handle("DELETE /api/listings/{id}", authMW(http.HandlerFunc(h.Listing.Delete)))
-	mux.Handle("POST /api/listings/{id}/images", authMW(http.HandlerFunc(h.Listing.UploadImage)))
-	mux.Handle("PATCH /api/listings/{id}/status", authMW(http.HandlerFunc(h.Listing.UpdateStatus)))
-	mux.Handle("POST /api/conversations", authMW(http.HandlerFunc(h.Chat.StartConversation)))
-	mux.Handle("GET /api/conversations", authMW(http.HandlerFunc(h.Chat.ListConversations)))
-	mux.Handle("GET /api/conversations/{id}", authMW(http.HandlerFunc(h.Chat.GetDetails)))
-	mux.Handle("GET /api/conversations/{id}/messages", authMW(http.HandlerFunc(h.Chat.ListMessages)))
+	activeMW := auth.RequireActiveUser(h.Users)
+	protect := func(handlerFunc http.HandlerFunc) http.Handler {
+		return authMW(activeMW(handlerFunc))
+	}
+
+	mux.Handle("GET /api/auth/me", protect(h.Auth.Me))
+	mux.Handle("POST /api/listings", protect(h.Listing.Create))
+	mux.Handle("PUT /api/listings/{id}", protect(h.Listing.Update))
+	mux.Handle("DELETE /api/listings/{id}", protect(h.Listing.Delete))
+	mux.Handle("POST /api/listings/{id}/images", protect(h.Listing.UploadImage))
+	mux.Handle("PATCH /api/listings/{id}/status", protect(h.Listing.UpdateStatus))
+	mux.Handle("POST /api/conversations", protect(h.Chat.StartConversation))
+	mux.Handle("GET /api/conversations", protect(h.Chat.ListConversations))
+	mux.Handle("GET /api/conversations/{id}", protect(h.Chat.GetDetails))
+	mux.Handle("GET /api/conversations/{id}/messages", protect(h.Chat.ListMessages))
 
 	// WebSocket auth ผ่าน query param token แทน middleware ปกติ (ดูเหตุผลใน chat_handler.go)
 	mux.HandleFunc("GET /ws/conversations/{id}", h.Chat.ServeWebSocket)
-	mux.Handle("POST /api/reviews", authMW(http.HandlerFunc(h.Review.Create)))
-	mux.Handle("GET /api/listings/{id}/can-review", authMW(http.HandlerFunc(h.Review.CanReview)))
-	mux.Handle("POST /api/conversations/{id}/shipment", authMW(http.HandlerFunc(h.Shipment.Create)))
-	mux.Handle("GET /api/conversations/{id}/shipment", authMW(http.HandlerFunc(h.Shipment.Get)))
-	mux.Handle("PATCH /api/conversations/{id}/shipment/status", authMW(http.HandlerFunc(h.Shipment.UpdateStatus)))
+	mux.Handle("POST /api/reviews", protect(h.Review.Create))
+	mux.Handle("GET /api/listings/{id}/can-review", protect(h.Review.CanReview))
+	mux.Handle("POST /api/conversations/{id}/shipment", protect(h.Shipment.Create))
+	mux.Handle("GET /api/conversations/{id}/shipment", protect(h.Shipment.Get))
+	mux.Handle("PATCH /api/conversations/{id}/shipment/status", protect(h.Shipment.UpdateStatus))
+
+	// --- รายงาน + support ticket (ต้อง login + ไม่ถูกแบน) ---
+	mux.Handle("POST /api/reports", protect(h.Report.Create))
+	mux.Handle("POST /api/tickets", protect(h.Ticket.Create))
+	mux.Handle("GET /api/tickets", protect(h.Ticket.ListMine))
+	mux.Handle("GET /api/tickets/{id}", protect(h.Ticket.GetThread))
+	mux.Handle("POST /api/tickets/{id}/messages", protect(h.Ticket.AddMessage))
+	mux.Handle("PATCH /api/tickets/{id}/status", protect(h.Ticket.UpdateStatus))
+
+	// --- Admin routes (ต้องเป็น admin เท่านั้น) ---
+	adminProtect := func(handlerFunc http.HandlerFunc) http.Handler {
+		return authMW(activeMW(auth.RequireAdmin(handlerFunc)))
+	}
+	mux.Handle("GET /api/admin/reports", adminProtect(h.Report.List))
+	mux.Handle("PATCH /api/admin/reports/{id}/resolve", adminProtect(h.Report.Resolve))
+	mux.Handle("GET /api/admin/tickets", adminProtect(h.Ticket.ListAll))
 
 	// --- Static file (รูปที่อัปโหลด) ---
 	fs := http.FileServer(http.Dir(h.UploadsDir))

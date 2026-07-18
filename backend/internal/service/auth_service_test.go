@@ -161,6 +161,27 @@ func TestAuthService_Login(t *testing.T) {
 	})
 }
 
+func TestAuthService_Login_BannedAccount(t *testing.T) {
+	users := newFakeUserRepository()
+	svc := NewAuthService(users, "test-secret")
+	ctx := context.Background()
+
+	_, user, err := svc.Register(ctx, RegisterInput{
+		Email: "somchai@ku.ac.th", Password: "correct-password", Name: "สมชาย",
+	})
+	if err != nil {
+		t.Fatalf("seed register ไม่ควร error: %v", err)
+	}
+	if err := users.Ban(ctx, user.ID, "โกงเงินผู้ซื้อ", "admin-1"); err != nil {
+		t.Fatalf("เตรียมข้อมูลไม่สำเร็จ: %v", err)
+	}
+
+	_, _, err = svc.Login(ctx, "somchai@ku.ac.th", "correct-password")
+	if !errors.Is(err, ErrAccountBanned) {
+		t.Fatalf("ต้องการ ErrAccountBanned แต่ได้ %v", err)
+	}
+}
+
 func TestAuthService_Me(t *testing.T) {
 	users := newFakeUserRepository()
 	svc := NewAuthService(users, "test-secret")

@@ -46,7 +46,10 @@ dormmarket/
         │   ├── listings/        # ประกาศขาย: HomePage, CreateListingPage, EditListingPage, ...
         │   ├── chat/            # แชท: ConversationsPage, ChatPage, useConversationSocket (WebSocket)
         │   ├── reviews/         # ReviewSection, StarRating
-        │   └── shipments/       # ShipmentPanel
+        │   ├── shipments/       # ShipmentPanel
+        │   ├── reports/         # ReportButton (รายงานประกาศ/ผู้ใช้)
+        │   ├── support/         # SupportPage, TicketThreadPage (ผู้ใช้คุยกับแอดมิน)
+        │   └── admin/           # AdminReportsPage, AdminTicketsPage (แอดมินเท่านั้น)
         ├── components/          # UI ที่ใช้ซ้ำข้าม feature เท่านั้น (Navbar, Footer, icons, FieldError)
         ├── lib/                 # infra กลาง — client.js (apiFetch/setToken/imageUrl)
         └── index.css            # @tailwind directives เท่านั้น ไม่มี custom class แล้ว
@@ -83,6 +86,9 @@ docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/mi
 docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/migrations/0005_add_shipments.up.sql
 docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/migrations/0006_add_listing_soft_delete.up.sql
 docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/migrations/0007_add_image_embeddings.up.sql
+docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/migrations/0008_add_user_role_ban.up.sql
+docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/migrations/0009_add_reports.up.sql
+docker exec -i dormmarket-postgres psql -U dormmarket -d dormmarket < backend/migrations/0010_add_support_tickets.up.sql
 ```
 
 ### 3) รัน backend
@@ -332,6 +338,47 @@ WebSocket spec เอง
 โปรเซสเดียว (`internal/ws/hub.go`) ถ้า deploy หลาย instance พร้อมกัน (horizontal scaling)
 ข้อความจะ broadcast ไปหาแค่ client ที่เชื่อมกับ instance เดียวกัน ต้องเปลี่ยนไปใช้ Redis
 pub/sub แทนถ้าจะ scale เกิน 1 instance
+
+## ระบบแอดมิน: รายงาน + แบน + Support Ticket
+
+**การตั้งแอดมิน** — ไม่มี UI สมัคร/เลื่อนขั้นเป็นแอดมิน ตั้งใจให้ทำผ่าน DB ตรงๆ เท่านั้น
+(เพื่อความปลอดภัย):
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
+```
+
+**ระบบแบน** — `users.is_banned` เช็คสองจุด: (1) ตอน login (ทั้งอีเมล/รหัสผ่านและ Google)
+ถ้าถูกแบนจะ login ไม่ได้เลย (2) ทุก request ที่ต้อง login ผ่าน middleware
+`RequireActiveUser` (`internal/auth/middleware.go`) ซึ่งเช็คจาก DB ทุกครั้ง ไม่ใช่แค่ตอน
+login — ทำให้การแบนมีผลทันทีแม้ token เดิมจะยังไม่หมดอายุก็ตาม
+**ข้อจำกัดที่ควรรู้:** WebSocket handshake (`/ws/conversations/{id}`) auth ผ่าน query param
+token แยกจาก middleware ปกติ (ดูเหตุผลในหัวข้อ Real-time Chat) จึงไม่ผ่าน `RequireActiveUser`
+— connection ที่เปิดค้างไว้ก่อนถูกแบนจะไม่ถูกตัดทันที
+
+**ระบบรายงาน** — รายงานได้ทั้งประกาศ (`targetType: "listing"`) และผู้ใช้ (`targetType: "user"`)
+จากหน้าเดียวกัน แอดมินดำเนินการได้ 3 แบบต่อ 1 รายงาน: `ban_user` (แบนผู้ใช้ที่ถูกรายงาน),
+`remove_listing` (ลบประกาศที่ถูกรายงาน แบบ soft delete เหมือนที่เจ้าของลบเอง), หรือ `none`
+(ปิด report โดยไม่ทำอะไร) — ทำจากหน้าเดียว (`/admin/reports`) ไม่ต้องสลับไปหน้าจัดการ user แยก
+
+**Support Ticket** — แยกจากระบบแชทซื้อขายเดิมโดยสิ้นเชิง (`support_tickets`/`ticket_messages`
+คนละตารางกับ `conversations`/`messages`) เพราะเป็นคนละบริบทกัน: อันนี้คือผู้ใช้คุยกับแอดมิน
+ไม่ใช่ผู้ซื้อคุยกับผู้ขาย ไม่มี WebSocket (ไม่จำเป็นต้อง real-time เท่าแชทซื้อขาย) — สถานะ
+`open` (ใหม่/รอตอบ) → `pending` (แอดมินตอบแล้ว รอผู้ใช้) → `closed` (ปิดเรื่อง) ผู้ใช้ทัก
+ข้อความเพิ่มตอน ticket ปิดไปแล้วจะ reopen เป็น `open` ให้อัตโนมัติ
+
+**Endpoints เพิ่มเติม:**
+
+| Method | Path | ต้อง login | คำอธิบาย |
+|---|---|---|---|
+| POST | `/api/reports` | ✅ | รายงานประกาศหรือผู้ใช้ |
+| GET | `/api/admin/reports` | ✅ (แอดมิน) | รายการรายงาน (`?status=pending\|resolved\|dismissed`) |
+| PATCH | `/api/admin/reports/{id}/resolve` | ✅ (แอดมิน) | ดำเนินการกับรายงาน (`action: ban_user\|remove_listing\|none`) |
+| POST | `/api/tickets` | ✅ | เปิด support ticket ใหม่ (หัวข้อ + ข้อความแรก) |
+| GET | `/api/tickets` | ✅ | Ticket ทั้งหมดของฉัน |
+| GET | `/api/tickets/{id}` | ✅ (เจ้าของหรือแอดมิน) | รายละเอียด ticket + ข้อความทั้งหมด |
+| POST | `/api/tickets/{id}/messages` | ✅ (เจ้าของหรือแอดมิน) | ตอบกลับใน ticket |
+| PATCH | `/api/tickets/{id}/status` | ✅ (เจ้าของปิดเองได้/แอดมินตั้งได้ทุกสถานะ) | เปลี่ยนสถานะ ticket |
+| GET | `/api/admin/tickets` | ✅ (แอดมิน) | Ticket ทั้งหมดในระบบ (`?status=open\|pending\|closed`) |
 
 ## ทำไม schema ถึงมี column ที่ยังไม่ใช้ (เช่น `suggested_price`)
 

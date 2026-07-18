@@ -20,6 +20,7 @@ var (
 	ErrInvalidEmail       = errors.New("รูปแบบอีเมลไม่ถูกต้อง")
 	ErrNameRequired       = errors.New("กรุณาระบุชื่อ")
 	ErrGoogleAuthDisabled = errors.New("ระบบยังไม่ได้เปิดใช้งาน Google Login")
+	ErrAccountBanned      = errors.New("บัญชีนี้ถูกระงับการใช้งาน")
 )
 
 const tokenTTL = 7 * 24 * time.Hour
@@ -103,6 +104,9 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	if !auth.CheckPassword(password, user.PasswordHash) {
 		return "", nil, ErrInvalidCreds
 	}
+	if user.IsBanned {
+		return "", nil, ErrAccountBanned
+	}
 
 	token, err := auth.GenerateToken(user.ID, s.jwtSecret, tokenTTL)
 	if err != nil {
@@ -142,6 +146,9 @@ func (s *AuthService) LoginWithGoogle(ctx context.Context, idToken string) (stri
 		}
 	default:
 		return "", nil, err
+	}
+	if user.IsBanned {
+		return "", nil, ErrAccountBanned
 	}
 
 	token, err := auth.GenerateToken(user.ID, s.jwtSecret, tokenTTL)

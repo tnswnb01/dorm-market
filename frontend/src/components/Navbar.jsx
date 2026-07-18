@@ -1,12 +1,24 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/context/AuthContext'
-import { IconChat, IconClose, IconHistory, IconLogout, IconMenu, IconPlus, IconStore, IconTag } from '@/components/icons'
+import {
+  IconChat,
+  IconClose,
+  IconFlag,
+  IconHistory,
+  IconLogout,
+  IconMenu,
+  IconPlus,
+  IconShield,
+  IconStore,
+  IconTag,
+} from '@/components/icons'
 
 const NAV_LINKS = [
   { to: '/conversations', label: 'ข้อความ', icon: IconChat },
   { to: '/purchases', label: 'ประวัติการซื้อ', icon: IconHistory },
   { to: '/my-listings', label: 'ประกาศของฉัน', icon: IconTag },
+  { to: '/support', label: 'แจ้งปัญหา', icon: IconFlag },
 ]
 
 function navLinkCls({ isActive }) {
@@ -22,7 +34,7 @@ function mobileLinkCls({ isActive }) {
 }
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -66,6 +78,16 @@ export default function Navbar() {
                 <IconPlus width="15" height="15" />
                 ลงประกาศ
               </NavLink>
+
+              {isAdmin && (
+                <NavLink
+                  to="/admin/reports"
+                  className="ml-2 flex items-center gap-1.5 rounded-md border border-line px-3.5 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:text-orange"
+                >
+                  <IconShield width="15" height="15" />
+                  Admin
+                </NavLink>
+              )}
 
               <div className="ml-3 flex items-center gap-2 border-l border-line pl-3">
                 <span
@@ -134,6 +156,17 @@ export default function Navbar() {
                 <IconPlus width="16" height="16" />
                 ลงประกาศ
               </NavLink>
+
+              {isAdmin && (
+                <NavLink
+                  to="/admin/reports"
+                  className="mt-1.5 flex items-center justify-center gap-1.5 rounded-md border border-line px-3.5 py-2.5 text-sm font-semibold text-ink-soft"
+                  onClick={closeMenu}
+                >
+                  <IconShield width="16" height="16" />
+                  Admin
+                </NavLink>
+              )}
 
               <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
                 <span className="flex items-center gap-2 text-sm text-ink-soft">

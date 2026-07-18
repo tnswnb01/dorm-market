@@ -3,6 +3,7 @@ import { AuthProvider } from '@/features/auth/context/AuthContext'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ProtectedRoute from '@/features/auth/components/ProtectedRoute'
+import AdminRoute from '@/features/auth/components/AdminRoute'
 import HomePage from '@/features/listings/pages/HomePage'
 import LoginPage from '@/features/auth/pages/LoginPage'
 import RegisterPage from '@/features/auth/pages/RegisterPage'
@@ -13,6 +14,10 @@ import ConversationsPage from '@/features/chat/pages/ConversationsPage'
 import ChatPage from '@/features/chat/pages/ChatPage'
 import EditListingPage from '@/features/listings/pages/EditListingPage'
 import PurchaseHistoryPage from '@/features/chat/pages/PurchaseHistoryPage'
+import SupportPage from '@/features/support/pages/SupportPage'
+import TicketThreadPage from '@/features/support/pages/TicketThreadPage'
+import AdminReportsPage from '@/features/admin/pages/AdminReportsPage'
+import AdminTicketsPage from '@/features/admin/pages/AdminTicketsPage'
 
 export default function App() {
   return (
@@ -72,6 +77,38 @@ export default function App() {
                   <ProtectedRoute>
                     <ChatPage />
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/support"
+                element={
+                  <ProtectedRoute>
+                    <SupportPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/support/:id"
+                element={
+                  <ProtectedRoute>
+                    <TicketThreadPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/reports"
+                element={
+                  <AdminRoute>
+                    <AdminReportsPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/tickets"
+                element={
+                  <AdminRoute>
+                    <AdminTicketsPage />
+                  </AdminRoute>
                 }
               />
             </Routes>

@@ -21,6 +21,9 @@ type ListingRepository interface {
 	SuggestPrice(ctx context.Context, categoryID string, condition models.ListingCondition) (*models.PriceSuggestion, error)
 	Update(ctx context.Context, l *models.Listing) error
 	SoftDelete(ctx context.Context, id string, sellerID string) error
+	// AdminSoftDelete เหมือน SoftDelete แต่ไม่เช็คความเป็นเจ้าของ — ใช้ตอนแอดมิน resolve
+	// report ด้วย action remove_listing เท่านั้น
+	AdminSoftDelete(ctx context.Context, id string) error
 	SetImageEmbedding(ctx context.Context, imageID string, embedding []float32) error
 	SearchBySimilarListings(ctx context.Context, embedding []float32, limit int) ([]models.Listing, error)
 }
@@ -246,6 +249,25 @@ func (r *postgresListingRepository) SoftDelete(ctx context.Context, id string, s
 	result, err := r.db.ExecContext(ctx,
 		`UPDATE listings SET deleted_at = now() WHERE id = $1 AND seller_id = $2 AND deleted_at IS NULL`,
 		id, sellerID,
+	)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// AdminSoftDelete ให้แอดมินลบประกาศได้โดยไม่ต้องเป็นเจ้าของ — ใช้จากหน้าจัดการ report เท่านั้น
+func (r *postgresListingRepository) AdminSoftDelete(ctx context.Context, id string) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE listings SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL`,
+		id,
 	)
 	if err != nil {
 		return err

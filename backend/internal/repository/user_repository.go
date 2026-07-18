@@ -18,6 +18,8 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (*models.User, error)
 	GetByGoogleID(ctx context.Context, googleID string) (*models.User, error)
 	LinkGoogleID(ctx context.Context, userID string, googleID string) error
+	// Ban ระงับการใช้งานบัญชี — เรียกจาก report_service ตอนแอดมิน resolve report ด้วย action ban_user
+	Ban(ctx context.Context, userID, reason, adminID string) error
 }
 
 type postgresUserRepository struct {
@@ -32,30 +34,42 @@ func (r *postgresUserRepository) Create(ctx context.Context, u *models.User) err
 	query := `
 		INSERT INTO users (email, password_hash, name, dorm_building, google_id)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, avatar_url, trust_score, created_at`
+		RETURNING id, avatar_url, trust_score, role, is_banned, created_at`
 	return r.db.QueryRowContext(ctx, query, u.Email, u.PasswordHash, u.Name, u.DormBuilding, u.GoogleID).
-		Scan(&u.ID, &u.AvatarURL, &u.TrustScore, &u.CreatedAt)
+		Scan(&u.ID, &u.AvatarURL, &u.TrustScore, &u.Role, &u.IsBanned, &u.CreatedAt)
 }
 
 func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, dorm_building, avatar_url, trust_score, created_at, google_id
+		SELECT id, email, password_hash, name, dorm_building, avatar_url, trust_score,
+		       role, is_banned, ban_reason, created_at, google_id
 		FROM users WHERE email = $1`
 	return scanUser(r.db.QueryRowContext(ctx, query, email))
 }
 
 func (r *postgresUserRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, dorm_building, avatar_url, trust_score, created_at, google_id
+		SELECT id, email, password_hash, name, dorm_building, avatar_url, trust_score,
+		       role, is_banned, ban_reason, created_at, google_id
 		FROM users WHERE id = $1`
 	return scanUser(r.db.QueryRowContext(ctx, query, id))
 }
 
 func (r *postgresUserRepository) GetByGoogleID(ctx context.Context, googleID string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, dorm_building, avatar_url, trust_score, created_at, google_id
+		SELECT id, email, password_hash, name, dorm_building, avatar_url, trust_score,
+		       role, is_banned, ban_reason, created_at, google_id
 		FROM users WHERE google_id = $1`
 	return scanUser(r.db.QueryRowContext(ctx, query, googleID))
+}
+
+// Ban ระงับการใช้งานบัญชี — banned_at/banned_by บันทึกไว้เพื่อ audit ว่าใครแบนเมื่อไร
+func (r *postgresUserRepository) Ban(ctx context.Context, userID, reason, adminID string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE users SET is_banned = true, ban_reason = $1, banned_at = now(), banned_by = $2 WHERE id = $3`,
+		reason, adminID, userID,
+	)
+	return err
 }
 
 // LinkGoogleID ผูกบัญชี Google เข้ากับ user ที่สมัครด้วยอีเมล/รหัสผ่านไว้อยู่แล้ว
@@ -69,7 +83,7 @@ func scanUser(row *sql.Row) (*models.User, error) {
 	var u models.User
 	err := row.Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.DormBuilding,
-		&u.AvatarURL, &u.TrustScore, &u.CreatedAt, &u.GoogleID,
+		&u.AvatarURL, &u.TrustScore, &u.Role, &u.IsBanned, &u.BanReason, &u.CreatedAt, &u.GoogleID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
