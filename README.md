@@ -38,14 +38,18 @@ dormmarket/
 │   ├── training/                # เทรน ProjectionHead จริง (ดู ml-service/training/README.md)
 │   └── tests/                  # พิสูจน์ pipeline ด้วย numpy ล้วน ไม่ต้องมี torch
 └── frontend/
+    ├── vite.config.js           # ตั้ง path alias `@` → `src/`
     ├── tailwind.config.js       # สี/ฟอนต์ทั้งหมดตั้งไว้ที่นี่ (theme.extend)
     └── src/
-        ├── api/                # เรียก backend (1 ไฟล์ต่อ 1 resource)
-        ├── context/            # AuthContext (สถานะ login)
-        ├── hooks/              # useConversationSocket (WebSocket)
-        ├── components/         # UI ที่ใช้ซ้ำ
-        ├── pages/              # 1 ไฟล์ต่อ 1 หน้า (ใช้ Tailwind utility classes)
-        └── index.css           # @tailwind directives เท่านั้น ไม่มี custom class แล้ว
+        ├── features/            # แยกตาม domain — แต่ละ feature รวม api/components/pages/hooks ของตัวเอง
+        │   ├── auth/            # login/register, AuthContext, GoogleSignInButton, ProtectedRoute
+        │   ├── listings/        # ประกาศขาย: HomePage, CreateListingPage, EditListingPage, ...
+        │   ├── chat/            # แชท: ConversationsPage, ChatPage, useConversationSocket (WebSocket)
+        │   ├── reviews/         # ReviewSection, StarRating
+        │   └── shipments/       # ShipmentPanel
+        ├── components/          # UI ที่ใช้ซ้ำข้าม feature เท่านั้น (Navbar, Footer, icons, FieldError)
+        ├── lib/                 # infra กลาง — client.js (apiFetch/setToken/imageUrl)
+        └── index.css            # @tailwind directives เท่านั้น ไม่มี custom class แล้ว
 ```
 
 **หลักการจัดโครงสร้าง (ทำไมถึงแบ่งแบบนี้):**
@@ -53,7 +57,11 @@ dormmarket/
   ชั้นบนไม่รู้จักรายละเอียดของชั้นล่าง (เช่น handler ไม่รู้ว่า data เก็บใน Postgres หรือที่ไหน)
   ทำให้แก้/เพิ่มฟีเจอร์โดยไม่กระทบชั้นอื่น และเขียน unit test แต่ละชั้นแยกกันได้ง่าย
 - SQL query ทั้งหมดอยู่ใน `repository/` ที่เดียว — ถ้าจะ optimize query หรือเปลี่ยน DB ทีหลัง แก้ที่เดียวจบ
-- Frontend แยก `api/` ออกจาก `pages/` ชัดเจน — หน้าไม่ต้องรู้เรื่อง fetch/URL ตรงๆ
+- Frontend เป็น **feature-based**: แต่ละ domain (`auth`, `listings`, `chat`, `reviews`, `shipments`)
+  รวม `api/components/pages/hooks` ของตัวเองไว้ในโฟลเดอร์เดียว แทนที่จะกระจายตาม technical layer
+  เหมือนเดิม — แก้ฟีเจอร์หนึ่งไม่ต้องไล่เปิดหลายโฟลเดอร์ ส่วนที่ใช้ร่วมข้าม feature จริงๆ
+  (Navbar, Footer, icons, FieldError) อยู่ใน `components/` ชั้นบนสุด และ HTTP client กลางอยู่ใน `lib/`
+  import ทั้งหมดใช้ path alias `@/...` (ตั้งไว้ใน `vite.config.js`) แทน relative path ลึกๆ
 
 ## วิธีรัน (ครั้งแรก)
 
